@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>create a miracle</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0a0a;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    cursor: none;
+    font-family: 'Georgia', serif;
+  }
+
+  canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+  }
+
+  #cursor {
+    position: fixed;
+    width: 8px; height: 8px;
+    background: rgba(255,255,255,0.6);
+    border-radius: 50%;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s, background 0.3s;
+    z-index: 100;
+    mix-blend-mode: screen;
+  }
+
+  #ui {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  .text-block {
+    text-align: center;
+    opacity: 0;
+    transition: opacity 1.8s ease;
+    pointer-events: none;
+  }
+
+  .text-block.visible {
+    opacity: 1;
+  }
+
+  .text-block.hidden {
+    opacity: 0;
+  }
+
+  .main-title {
+    font-size: clamp(11px, 2vw, 15px);
+    letter-spacing: 0.35em;
+    color: rgba(200, 200, 200, 0.5);
+    font-weight: 300;
+    margin-bottom: 18px;
+    text-transform: lowercase;
+  }
+
+  .sub-title {
+    font-size: clamp(18px, 4vw, 28px);
+    letter-spacing: 0.1em;
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 300;
+    line-height: 1.8;
+  }
+
+  .hint {
+    margin-top: 48px;
+    font-size: clamp(10px, 1.8vw, 13px);
+    letter-spacing: 0.4em;
+    color: rgba(255,255,255,0.25);
+    animation: pulse 3s ease-in-out infinite;
+    text-transform: lowercase;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.7; }
+  }
+
+  /* 中間メッセージ */
+  #message2 {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 2s ease;
+    pointer-events: none;
+  }
+
+  #message2.visible { opacity: 1; }
+
+  .poem {
+    text-align: center;
+    line-height: 2.4;
+  }
+
+  .poem-line {
+    display: block;
+    font-size: clamp(14px, 3vw, 22px);
+    letter-spacing: 0.15em;
+    color: rgba(255,255,255,0.9);
+    font-weight: 300;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 1.2s ease, transform 1.2s ease;
+  }
+
+  .poem-line.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .poem-hint {
+    display: block;
+    margin-top: 52px;
+    font-size: clamp(10px, 1.8vw, 13px);
+    letter-spacing: 0.4em;
+    color: rgba(255,255,255,0.2);
+    text-transform: lowercase;
+    opacity: 0;
+    animation: pulse 3s ease-in-out infinite;
+    transition: opacity 1.5s ease;
+  }
+
+  .poem-hint.visible { opacity: 1; }
+
+  /* ラストメッセージ */
+  #message3 {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 2.5s ease;
+    pointer-events: none;
+  }
+
+  #message3.visible { opacity: 1; }
+
+  .miracle-text {
+    text-align: center;
+  }
+
+  .miracle-line {
+    display: block;
+    letter-spacing: 0.12em;
+    font-weight: 300;
+    opacity: 0;
+    transform: scale(0.94);
+    transition: opacity 1.5s ease, transform 1.5s ease;
+  }
+
+  .miracle-line.l1 {
+    font-size: clamp(13px, 2.5vw, 20px);
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 16px;
+  }
+
+  .miracle-line.l2 {
+    font-size: clamp(22px, 5vw, 42px);
+    background: linear-gradient(135deg, #fff 0%, #a8d8ff 40%, #ffb3e6 70%, #fff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+    line-height: 1.4;
+  }
+
+  .miracle-line.l3 {
+    font-size: clamp(13px, 2.5vw, 18px);
+    color: rgba(255,255,255,0.5);
+    margin-top: 8px;
+  }
+
+  .miracle-line.visible {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* replay */
+  #replay {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    letter-spacing: 0.4em;
+    color: rgba(255,255,255,0.2);
+    cursor: pointer;
+    z-index: 20;
+    opacity: 0;
+    transition: opacity 2s ease, color 0.3s;
+    pointer-events: none;
+    text-transform: lowercase;
+  }
+
+  #replay.visible {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  #replay:hover { color: rgba(255,255,255,0.5); }
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<div id="cursor"></div>
+
+<!-- Phase 1: モノクロ開幕 -->
+<div id="ui">
+  <div class="text-block" id="tb1">
+    <div class="main-title">create a miracle</div>
+    <div class="sub-title">miracles arrive without warning</div>
+    <div class="hint">tap anywhere</div>
+  </div>
+</div>
+
+<!-- Phase 2: 詩 -->
+<div id="message2">
+  <div class="poem">
+    <span class="poem-line" id="pl1">before i fell in love with you</span>
+    <span class="poem-line" id="pl2">the world was painted in grey</span>
+    <span class="poem-hint" id="ph">tap once more</span>
+  </div>
+</div>
+
+<!-- Phase 3: ミラクル -->
+<div id="message3">
+  <div class="miracle-text">
+    <span class="miracle-line l1" id="ml1">the most beautiful voice in the world</span>
+    <span class="miracle-line l2" id="ml2">found me — that is the miracle</span>
+    <span class="miracle-line l3" id="ml3">— create a miracle —</span>
+  </div>
+</div>
+
+<div id="replay">back</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ===== STATE =====
+let phase = 0; // 0=mono, 1=burst+poem, 2=miracle
+let tapX = 0, tapY = 0;
+
+// ===== THREE SETUP =====
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setClearColor(0x060608, 1);
+
+const scene = new THREE.Scene();
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+// ===== SHADER MATERIAL =====
+const uniforms = {
+  uTime:       { value: 0 },
+  uPhase:      { value: 0.0 },
+  uTap:        { value: new THREE.Vector2(0.5, 0.5) },
+  uBurst:      { value: 0.0 },
+  uColor:      { value: 0.0 },
+  uBigBang:    { value: 0.0 },
+  uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+  uMouse:      { value: new THREE.Vector2(0.5, 0.5) },
+  uMouseForce: { value: 0.0 },
+};
+
+const vertShader = `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = vec4(position, 1.0);
+  }
+`;
+
+const fragShader = `
+  precision highp float;
+
+  varying vec2 vUv;
+  uniform float uTime;
+  uniform float uPhase;
+  uniform vec2  uTap;
+  uniform float uBurst;
+  uniform float uColor;
+  uniform float uBigBang;
+  uniform vec2  uResolution;
+  uniform vec2  uMouse;
+  uniform float uMouseForce;
+
+  #define PI 3.14159265359
+  #define TAU 6.28318530718
+
+  // ノイズ
+  float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+  }
+
+  float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f*f*(3.0-2.0*f);
+    float a = hash(i);
+    float b = hash(i+vec2(1,0));
+    float c = hash(i+vec2(0,1));
+    float d = hash(i+vec2(1,1));
+    return mix(mix(a,b,f.x), mix(c,d,f.x), f.y);
+  }
+
+  float fbm(vec2 p) {
+    float v = 0.0, a = 0.5;
+    for(int i=0;i<5;i++) {
+      v += a * noise(p);
+      p *= 2.1; a *= 0.5;
+    }
+    return v;
+  }
+
+  // モノクロ星フィールド（マウス引き寄せ付き）
+  vec3 stars(vec2 uv, float t) {
+    vec3 col = vec3(0.0);
+    vec2 aspect = vec2(uResolution.x / uResolution.y, 1.0);
+    vec2 mouseA = (uMouse - 0.5) * aspect + 0.5;
+    vec2 uvA = (uv - 0.5) * aspect + 0.5;
+
+    for(int i=0;i<3;i++){
+      float fi = float(i);
+      vec2 g = uv * (8.0 + fi*6.0);
+      vec2 id = floor(g);
+      vec2 frac = fract(g) - 0.5;
+      float h = hash(id + fi*17.3);
+      float twinkle = 0.5 + 0.5*sin(t*1.2 + h*TAU);
+
+      // 星のワールド座標
+      vec2 starWorldUV = (id + 0.5 + frac) / (8.0 + fi*6.0);
+      vec2 starA = (starWorldUV - 0.5) * aspect + 0.5;
+      float distToMouse = length(starA - mouseA);
+
+      // マウスに近い星を引き寄せて光らせる
+      float attract = smoothstep(0.25, 0.0, distToMouse) * uMouseForce;
+      float brightness = 0.4 + attract * 2.5;
+      float sizeBoost = 1.0 - attract * 0.5; // 引き寄せで見かけが拡大
+
+      float r = length(frac);
+      float star = smoothstep(0.07 * sizeBoost, 0.0, r) * twinkle * h;
+
+      // 引き寄せられた星は少し白く光る
+      vec3 starColor = mix(vec3(1.0), vec3(0.9, 0.95, 1.0), attract);
+      col += starColor * star * brightness;
+    }
+    return col;
+  }
+
+  // モノクロノイズ雲
+  vec3 monoClouds(vec2 uv, float t) {
+    float n = fbm(uv * 2.5 + t * 0.03);
+    float n2 = fbm(uv * 4.0 - t * 0.02 + 1.7);
+    float v = n * 0.6 + n2 * 0.4;
+    return vec3(v * 0.12);
+  }
+
+  // 渦・吸引エフェクト
+  vec2 vortex(vec2 uv, vec2 center, float strength) {
+    vec2 d = uv - center;
+    float r = length(d);
+    float angle = atan(d.y, d.x);
+    float pull = strength / (r * r + 0.01);
+    angle += pull * 0.15;
+    r -= pull * 0.04;
+    return center + vec2(cos(angle), sin(angle)) * r;
+  }
+
+  // オーロラ（有機的・渦巻き）
+  vec3 aurora(vec2 uv, float t, float intensity) {
+    vec3 col = vec3(0.0);
+    float r = length(uv);
+    float angle = atan(uv.y, uv.x);
+    for(int i=0;i<6;i++){
+      float fi = float(i);
+      float spiralAngle = angle + r * (2.0 + fi * 0.8) - t * (0.2 + fi * 0.05);
+      float n1 = fbm(uv * 1.8 + vec2(fi * 1.3, fi * 0.7) + t * 0.04);
+      float n2 = fbm(uv * 3.0 - vec2(fi * 0.9, fi * 1.1) - t * 0.03);
+      float wave = sin(spiralAngle * 2.5 + n1 * 3.0) * 0.2 + n2 * 0.15;
+      float dist = r - 0.4 - fi * 0.12 + wave;
+      float band = smoothstep(0.12, 0.0, abs(dist)) * (1.0 - smoothstep(0.5, 1.2, r));
+      float hue = fi * 0.17 + t * 0.04 + angle * 0.1;
+      vec3 c = 0.5 + 0.5*cos(hue*TAU + vec3(0.0, 2.1, 4.2));
+      col += c * band * 0.6 * intensity;
+    }
+    return col;
+  }
+
+  // 色バースト（螺旋）
+  vec3 colorBurst(vec2 uv, vec2 tap, float t, float burst) {
+    vec3 col = vec3(0.0);
+    vec2 d = uv - tap;
+    float r = length(d);
+    float angle = atan(d.y, d.x);
+
+    // 螺旋吸引
+    float spiral = burst * 2.0;
+    float twistAngle = angle + spiral / (r + 0.1) * 0.3;
+
+    for(int i=0;i<8;i++){
+      float fi = float(i) / 8.0;
+      float a = twistAngle + fi * TAU;
+      float wave = sin(a * 4.0 - t * 2.0 + r * 8.0) * 0.5 + 0.5;
+      float streak = smoothstep(0.4, 0.0, abs(r - burst * 0.6 - fi * 0.05));
+      float hue = fi + t * 0.1;
+      vec3 c = 0.5 + 0.5*cos(hue*TAU + vec3(0.0, 2.1, 4.2));
+      col += c * streak * wave * burst;
+    }
+
+    // 中心光
+    float center = smoothstep(0.3, 0.0, r) * burst * burst;
+    col += vec3(1.0, 0.95, 0.9) * center * 2.0;
+
+    return col;
+  }
+
+  // ビッグバン
+  vec3 bigBang(vec2 uv, vec2 tap, float t, float bang) {
+    vec3 col = vec3(0.0);
+    vec2 d = uv - tap;
+    float r = length(d);
+    float angle = atan(d.y, d.x);
+
+    // 爆発波
+    float waveFront = bang * 2.5;
+    float ring = smoothstep(0.04, 0.0, abs(r - waveFront * 0.5)) * bang;
+    col += vec3(1.0, 0.98, 0.95) * ring * 3.0;
+
+    // 放射光線
+    for(int i=0;i<16;i++){
+      float fi = float(i);
+      float rayAngle = fi / 16.0 * TAU + t * 0.2;
+      float diff = abs(mod(angle - rayAngle + PI, TAU) - PI);
+      float ray = smoothstep(0.12, 0.0, diff) * smoothstep(waveFront*0.6, 0.0, abs(r - waveFront*0.3));
+      float hue = fi/16.0 + t*0.05;
+      vec3 c = 0.5 + 0.5*cos(hue*TAU + vec3(0.0,2.1,4.2));
+      col += c * ray * bang * 2.0;
+    }
+
+    // 粒子散乱
+    for(int i=0;i<20;i++){
+      float fi = float(i);
+      float h = hash(vec2(fi, fi*1.7));
+      float pAngle = h * TAU;
+      float pDist = bang * (0.3 + h * 0.7);
+      vec2 pPos = tap + vec2(cos(pAngle), sin(pAngle)) * pDist;
+      float pr = length(uv - pPos);
+      float particle = smoothstep(0.015, 0.0, pr) * bang * (1.0 - h * 0.5);
+      float hue2 = h + t * 0.1;
+      vec3 pc = 0.5 + 0.5*cos(hue2*TAU + vec3(0.0,2.1,4.2));
+      col += pc * particle * 2.0;
+    }
+
+    // 全体フレア
+    float flare = smoothstep(1.0, 0.0, r) * bang * bang * 0.3;
+    col += vec3(0.8, 0.7, 1.0) * flare;
+
+    return col;
+  }
+
+  void main() {
+    vec2 uv = vUv;
+    vec2 aspect = vec2(uResolution.x / uResolution.y, 1.0);
+    vec2 uvA = (uv - 0.5) * aspect + 0.5;
+    vec2 tapA = (uTap - 0.5) * aspect + 0.5;
+
+    float t = uTime;
+    float burst = uBurst;
+    float colorAmt = uColor;
+    float bang = uBigBang;
+
+    // モノクロ背景
+    vec3 mono = stars(uv, t) + monoClouds(uv, t);
+
+    // 渦（タップ後に吸引）
+    vec2 vortexUV = uv;
+    if(burst > 0.01) {
+      vortexUV = vortex(uv, uTap, burst * 0.8);
+    }
+    vec3 monoDistorted = stars(vortexUV, t) + monoClouds(vortexUV, t);
+
+    // カラーバースト
+    vec3 color = colorBurst(uvA, tapA, t, burst);
+
+    // オーロラ
+    vec2 auroraUV = (uv - 0.5) * 2.0;
+    vec3 aur = aurora(auroraUV, t, burst * colorAmt);
+
+    // ビッグバン
+    vec3 bb = bigBang(uvA, tapA, t, bang);
+
+    // 合成
+    vec3 base = monoDistorted;
+
+    // バーストで色が入ってくる
+    vec3 col = mix(base, base + color + aur, colorAmt);
+
+    // ビッグバンでさらに爆発
+    col += bb;
+
+    // 暗闇フラッシュ（収縮の頂点）
+    float flash = smoothstep(0.85, 1.0, burst) * smoothstep(1.0, 0.85, burst) * 3.0;
+    col = mix(col, vec3(1.0), flash * 0.7);
+
+    // 暗転（ビッグバン前の一瞬）
+    float dark = smoothstep(0.0, 0.3, bang) * smoothstep(0.5, 0.2, bang);
+    col = mix(col, vec3(0.0), dark * 0.8);
+
+    // トーンマッピング
+    col = col / (col + 0.8);
+    col = pow(col, vec3(0.85));
+
+    // ビネット
+    float vig = length((uv - 0.5) * 1.6);
+    col *= 1.0 - vig * vig * 0.5;
+
+    gl_FragColor = vec4(col, 1.0);
+  }
+`;
+
+const geo = new THREE.PlaneGeometry(2, 2);
+const mat = new THREE.ShaderMaterial({ uniforms, vertexShader: vertShader, fragmentShader: fragShader });
+scene.add(new THREE.Mesh(geo, mat));
+
+// ===== ANIMATION TARGETS =====
+let burstTarget = 0;
+let colorTarget = 0;
+let bangTarget = 0;
+
+// ===== UI ELEMENTS =====
+const tb1 = document.getElementById('tb1');
+const msg2 = document.getElementById('message2');
+const msg3 = document.getElementById('message3');
+const pl1 = document.getElementById('pl1');
+const pl2 = document.getElementById('pl2');
+const ph  = document.getElementById('ph');
+const ml1 = document.getElementById('ml1');
+const ml2 = document.getElementById('ml2');
+const ml3 = document.getElementById('ml3');
+const replay = document.getElementById('replay');
+const cursorEl = document.getElementById('cursor');
+
+// 初期表示
+setTimeout(() => tb1.classList.add('visible'), 400);
+
+// ===== CURSOR =====
+let mouseForceTarget = 0;
+
+document.addEventListener('mousemove', e => {
+  cursorEl.style.left = e.clientX + 'px';
+  cursorEl.style.top  = e.clientY + 'px';
+  tapX = e.clientX / window.innerWidth;
+  tapY = 1.0 - e.clientY / window.innerHeight;
+  uniforms.uMouse.value.set(tapX, tapY);
+  mouseForceTarget = 1.0;
+});
+
+document.addEventListener('touchmove', e => {
+  const t = e.touches[0];
+  const mx = t.clientX / window.innerWidth;
+  const my = 1.0 - t.clientY / window.innerHeight;
+  uniforms.uMouse.value.set(mx, my);
+  mouseForceTarget = 1.0;
+}, { passive: true });
+
+// マウスが静止したらforceを落とす
+setInterval(() => { mouseForceTarget *= 0.85; }, 50);
+
+// ===== TAP / CLICK =====
+function getEventPos(e) {
+  if(e.touches) {
+    return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }
+  return { x: e.clientX, y: e.clientY };
+}
+
+function handleTap(e) {
+  if(phase === 2) return;
+  if(phase === 0) {
+    // Phase 0 → 1: バースト開始
+    const pos = getEventPos(e);
+    tapX = pos.x / window.innerWidth;
+    tapY = 1.0 - pos.y / window.innerHeight;
+    uniforms.uTap.value.set(tapX, tapY);
+
+    phase = 1;
+    burstTarget = 1.0;
+    colorTarget = 1.0;
+
+    // テキスト非表示
+    tb1.classList.remove('visible');
+    tb1.classList.add('hidden');
+
+    // 詩を表示（タイミング）
+    setTimeout(() => {
+      msg2.classList.add('visible');
+      setTimeout(() => { pl1.classList.add('visible'); }, 400);
+      setTimeout(() => { pl2.classList.add('visible'); }, 1200);
+      setTimeout(() => { ph.classList.add('visible'); }, 2600);
+    }, 1600);
+
+  } else if(phase === 1) {
+    // Phase 1 → 2: ビッグバン
+    const pos = getEventPos(e);
+    tapX = pos.x / window.innerWidth;
+    tapY = 1.0 - pos.y / window.innerHeight;
+    uniforms.uTap.value.set(tapX, tapY);
+
+    phase = 2;
+    bangTarget = 1.0;
+
+    // 詩を消す
+    msg2.classList.remove('visible');
+
+    // ミラクルメッセージ
+    setTimeout(() => {
+      msg3.classList.add('visible');
+      setTimeout(() => { ml1.classList.add('visible'); }, 300);
+      setTimeout(() => { ml2.classList.add('visible'); }, 1000);
+      setTimeout(() => { ml3.classList.add('visible'); }, 2000);
+      setTimeout(() => { replay.classList.add('visible'); }, 3500);
+    }, 1200);
+  }
+}
+
+document.addEventListener('click', handleTap);
+document.addEventListener('touchstart', e => { e.preventDefault(); handleTap(e); }, { passive: false });
+
+// Replay
+function doReplay(e) {
+  e.stopPropagation();
+  e.preventDefault();
+  phase = 0;
+  burstTarget = 0; colorTarget = 0; bangTarget = 0;
+  uniforms.uBurst.value = 0;
+  uniforms.uColor.value = 0;
+  uniforms.uBigBang.value = 0;
+
+  msg3.classList.remove('visible');
+  replay.classList.remove('visible');
+  [ml1,ml2,ml3].forEach(el => el.classList.remove('visible'));
+  [pl1,pl2,ph].forEach(el => el.classList.remove('visible'));
+
+  setTimeout(() => {
+    tb1.classList.remove('hidden');
+    setTimeout(() => tb1.classList.add('visible'), 50);
+  }, 500);
+}
+
+replay.addEventListener('click', doReplay);
+replay.addEventListener('touchstart', doReplay, { passive: false });
+
+// ===== RENDER LOOP =====
+const clock = new THREE.Clock();
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+(function animate() {
+  requestAnimationFrame(animate);
+
+  const elapsed = clock.getElapsedTime();
+  uniforms.uTime.value = elapsed;
+
+  // スムーズ補間
+  uniforms.uBurst.value  = lerp(uniforms.uBurst.value,  burstTarget,  0.025);
+  uniforms.uColor.value  = lerp(uniforms.uColor.value,  colorTarget,  0.018);
+  uniforms.uBigBang.value = lerp(uniforms.uBigBang.value, bangTarget, 0.022);
+  uniforms.uMouseForce.value = lerp(uniforms.uMouseForce.value, mouseForceTarget, 0.08);
+
+  renderer.render(scene, camera);
+})();
+
+// ===== RESIZE =====
+window.addEventListener('resize', () => {
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  uniforms.uResolution.value.set(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>
