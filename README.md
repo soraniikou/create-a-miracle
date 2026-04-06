@@ -8,7 +8,7 @@
 ２回目　tapボタンを押してください
 
 一瞬だけでも現実を離れてミラクルな世界へ
-体験→create-a-miracle
+体験→create-a-miracle.vercel.app
 
 
 
