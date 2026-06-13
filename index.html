@@ -134,7 +134,7 @@
     margin-top: 52px;
     font-size: clamp(10px, 1.8vw, 13px);
     letter-spacing: 0.4em;
-    color: rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.7);
     text-transform: lowercase;
     opacity: 0;
     animation: pulse 3s ease-in-out infinite;
@@ -241,8 +241,7 @@
 <!-- Phase 2: 詩 -->
 <div id="message2">
   <div class="poem">
-    <span class="poem-line" id="pl1">before i fell in love with you</span>
-    <span class="poem-line" id="pl2">the world was painted in grey</span>
+    <span class="poem-line" id="pl2">if the world was painted in grey</span>
     <span class="poem-hint" id="ph">tap once more</span>
   </div>
 </div>
@@ -556,7 +555,6 @@ let bangTarget = 0;
 const tb1 = document.getElementById('tb1');
 const msg2 = document.getElementById('message2');
 const msg3 = document.getElementById('message3');
-const pl1 = document.getElementById('pl1');
 const pl2 = document.getElementById('pl2');
 const ph  = document.getElementById('ph');
 const ml1 = document.getElementById('ml1');
@@ -619,9 +617,8 @@ function handleTap(e) {
     // 詩を表示（タイミング）
     setTimeout(() => {
       msg2.classList.add('visible');
-      setTimeout(() => { pl1.classList.add('visible'); }, 400);
-      setTimeout(() => { pl2.classList.add('visible'); }, 1200);
-      setTimeout(() => { ph.classList.add('visible'); }, 2600);
+      setTimeout(() => { pl2.classList.add('visible'); }, 400);
+      setTimeout(() => { ph.classList.add('visible'); }, 1400);
     }, 1600);
 
   } else if(phase === 1) {
@@ -664,7 +661,7 @@ function doReplay(e) {
   msg3.classList.remove('visible');
   replay.classList.remove('visible');
   [ml1,ml2,ml3].forEach(el => el.classList.remove('visible'));
-  [pl1,pl2,ph].forEach(el => el.classList.remove('visible'));
+  [pl2,ph].forEach(el => el.classList.remove('visible'));
 
   setTimeout(() => {
     tb1.classList.remove('hidden');
