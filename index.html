@@ -53,13 +53,8 @@
     pointer-events: none;
   }
 
-  .text-block.visible {
-    opacity: 1;
-  }
-
-  .text-block.hidden {
-    opacity: 0;
-  }
+  .text-block.visible { opacity: 1; }
+  .text-block.hidden { opacity: 0; }
 
   .main-title {
     font-size: clamp(11px, 2vw, 15px);
@@ -92,7 +87,45 @@
     50% { opacity: 0.7; }
   }
 
-  /* 中間メッセージ */
+  #jetcoaster-scene {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 1.5s ease;
+    pointer-events: none;
+  }
+
+  #jetcoaster-scene.visible { opacity: 1; }
+
+  .jetcoaster-content { text-align: center; }
+
+  .music-icon {
+    font-size: clamp(28px, 6vw, 48px);
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 24px;
+    display: block;
+    animation: musicFloat 2s ease-in-out infinite;
+  }
+
+  @keyframes musicFloat {
+    0%, 100% { transform: translateY(0); opacity: 0.6; }
+    50% { transform: translateY(-12px); opacity: 1; }
+  }
+
+  .music-text {
+    font-size: clamp(14px, 3vw, 22px);
+    letter-spacing: 0.12em;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 300;
+    line-height: 1.8;
+    margin: 8px 0;
+  }
+
   #message2 {
     position: fixed;
     top: 0; left: 0;
@@ -108,10 +141,7 @@
 
   #message2.visible { opacity: 1; }
 
-  .poem {
-    text-align: center;
-    line-height: 2.4;
-  }
+  .poem { text-align: center; line-height: 2.4; }
 
   .poem-line {
     display: block;
@@ -143,7 +173,6 @@
 
   .poem-hint.visible { opacity: 1; }
 
-  /* ラストメッセージ */
   #message3 {
     position: fixed;
     top: 0; left: 0;
@@ -159,9 +188,7 @@
 
   #message3.visible { opacity: 1; }
 
-  .miracle-text {
-    text-align: center;
-  }
+  .miracle-text { text-align: center; }
 
   .miracle-line {
     display: block;
@@ -179,7 +206,7 @@
   }
 
   .miracle-line.l2 {
-    font-size: clamp(15.4px, 3.5vw, 29.4px);
+    font-size: clamp(22px, 5vw, 42px);
     background: linear-gradient(135deg, #fff 0%, #a8d8ff 40%, #ffb3e6 70%, #fff 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -199,7 +226,6 @@
     transform: scale(1);
   }
 
-  /* replay */
   #replay {
     position: fixed;
     bottom: 40px;
@@ -229,7 +255,6 @@
 <canvas id="c"></canvas>
 <div id="cursor"></div>
 
-<!-- Phase 1: モノクロ開幕 -->
 <div id="ui">
   <div class="text-block" id="tb1">
     <div class="main-title">create a miracle</div>
@@ -238,7 +263,14 @@
   </div>
 </div>
 
-<!-- Phase 2: 詩 -->
+<div id="jetcoaster-scene">
+  <div class="jetcoaster-content">
+    <span class="music-icon">♪</span>
+    <span class="music-text">ヘッドホンから</span>
+    <span class="music-text">音楽が聞こえている...</span>
+  </div>
+</div>
+
 <div id="message2">
   <div class="poem">
     <span class="poem-line" id="pl2">if the world was painted in grey</span>
@@ -246,7 +278,6 @@
   </div>
 </div>
 
-<!-- Phase 3: ミラクル -->
 <div id="message3">
   <div class="miracle-text">
     <span class="miracle-line l1" id="ml1">the most beautiful voice in the world</span>
@@ -259,11 +290,58 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-// ===== STATE =====
-let phase = 0; // 0=mono, 1=burst+poem, 2=miracle
-let tapX = 0, tapY = 0;
+const MIRACLE_STORAGE_KEY = 'miracle_data_v1';
 
-// ===== THREE SETUP =====
+const miracleSets = [
+  { poem: 'same task, same hands, same day', l1: 'yet somehow', l2: 'you keep going — that is the miracle' },
+  { poem: 'if love felt impossible to believe', l1: 'a quiet voice said', l2: 'i was always choosing you — that is the miracle' },
+  { poem: 'the day demands everything from you', l1: 'and you', l2: 'show up anyway — that is the miracle' },
+  { poem: 'if your words seemed too small', l1: 'they still', l2: 'reached someone in the dark — that is the miracle' },
+  { poem: 'in the silence between us', l1: 'something real', l2: 'was always growing — that is the miracle' },
+  { poem: 'if the beauty almost passed by', l1: 'your heart', l2: 'caught it anyway — that is the miracle' },
+  { poem: 'alone in the room tonight', l1: 'you are not', l2: 'as forgotten as you think — that is the miracle' },
+  { poem: 'hours blur into one long line', l1: 'but somewhere', l2: 'time was kind to you — that is the miracle' },
+  { poem: 'if you couldn\'t see your own light', l1: 'someone else', l2: 'was seeing it clearly — that is the miracle' },
+  { poem: 'your unseen work', l1: 'still nourishes', l2: 'someone you may never know — that is the miracle' },
+  { poem: 'the day is finally over', l1: 'and you', l2: 'made it through — that is the miracle' },
+  { poem: 'morning came without asking', l1: 'and so did', l2: 'another chance — that is the miracle' }
+];
+
+function todayString() {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+}
+
+function loadMiracleData() {
+  try {
+    return JSON.parse(localStorage.getItem(MIRACLE_STORAGE_KEY)) || { lastDate: null, visitCount: 0 };
+  } catch (e) {
+    return { lastDate: null, visitCount: 0 };
+  }
+}
+
+function seededIndex(str, len) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
+  return hash % len;
+}
+
+const miracleData = loadMiracleData();
+const today = todayString();
+const isFirstVisitToday = miracleData.lastDate !== today;
+
+if (isFirstVisitToday) {
+  miracleData.lastDate = today;
+  miracleData.visitCount = (miracleData.visitCount || 0) + 1;
+  try { localStorage.setItem(MIRACLE_STORAGE_KEY, JSON.stringify(miracleData)); } catch (e) {}
+}
+
+const todaysMiracle = miracleSets[seededIndex(today, miracleSets.length)];
+
+let phase = 0;
+let tapX = 0, tapY = 0;
+let jetcoasterStartTime = 0;
+
 const canvas = document.getElementById('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -273,17 +351,18 @@ renderer.setClearColor(0x060608, 1);
 const scene = new THREE.Scene();
 const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
-// ===== SHADER MATERIAL =====
 const uniforms = {
-  uTime:       { value: 0 },
-  uPhase:      { value: 0.0 },
-  uTap:        { value: new THREE.Vector2(0.5, 0.5) },
-  uBurst:      { value: 0.0 },
-  uColor:      { value: 0.0 },
-  uBigBang:    { value: 0.0 },
+  uTime: { value: 0 },
+  uPhase: { value: 0.0 },
+  uTap: { value: new THREE.Vector2(0.5, 0.5) },
+  uBurst: { value: 0.0 },
+  uColor: { value: 0.0 },
+  uBigBang: { value: 0.0 },
   uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
-  uMouse:      { value: new THREE.Vector2(0.5, 0.5) },
+  uMouse: { value: new THREE.Vector2(0.5, 0.5) },
   uMouseForce: { value: 0.0 },
+  uTunnelIntensity: { value: 0.0 },
+  uLightBurst: { value: 0.0 },
 };
 
 const vertShader = `
@@ -307,11 +386,12 @@ const fragShader = `
   uniform vec2  uResolution;
   uniform vec2  uMouse;
   uniform float uMouseForce;
+  uniform float uTunnelIntensity;
+  uniform float uLightBurst;
 
   #define PI 3.14159265359
   #define TAU 6.28318530718
 
-  // ノイズ
   float hash(vec2 p) {
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
   }
@@ -336,7 +416,6 @@ const fragShader = `
     return v;
   }
 
-  // モノクロ星フィールド（マウス引き寄せ付き）
   vec3 stars(vec2 uv, float t) {
     vec3 col = vec3(0.0);
     vec2 aspect = vec2(uResolution.x / uResolution.y, 1.0);
@@ -352,24 +431,20 @@ const fragShader = `
       float spawnMask = step(0.5, hash(id + fi*41.9));
       float twinkle = 0.55 + 0.45*sin(t*1.4 + h*TAU);
 
-      // 星のワールド座標
       vec2 starWorldUV = (id + 0.5 + frac) / (8.0 + fi*6.0);
       vec2 starA = (starWorldUV - 0.5) * aspect + 0.5;
       float distToMouse = length(starA - mouseA);
 
-      // マウスに近い星を引き寄せて光らせる
       float attract = smoothstep(0.25, 0.0, distToMouse) * uMouseForce;
       float brightness = 0.55 + attract * 3.0;
-      float sizeBoost = 1.0 - attract * 0.5; // 引き寄せで見かけが拡大
+      float sizeBoost = 1.0 - attract * 0.5;
 
       float r = length(frac);
       float glow = smoothstep(0.07 * sizeBoost, 0.0, r);
       float core = smoothstep(0.022 * sizeBoost, 0.0, r);
-      float sparkle = smoothstep(0.016 * sizeBoost, 0.0, abs(frac.x))
-                    * smoothstep(0.016 * sizeBoost, 0.0, abs(frac.y));
+      float sparkle = smoothstep(0.016 * sizeBoost, 0.0, abs(frac.x)) * smoothstep(0.016 * sizeBoost, 0.0, abs(frac.y));
       float star = (glow * 0.3 + core * 2.4 + sparkle * 1.2) * twinkle * h * spawnMask;
 
-      // 引き寄せられた星は少し白く光る / コアはより鋭く輝く
       vec3 starColor = mix(vec3(1.0), vec3(0.88, 0.93, 1.0), attract);
       starColor = mix(starColor, vec3(1.0, 1.0, 1.05), core * 0.7);
       col += starColor * star * brightness;
@@ -377,7 +452,6 @@ const fragShader = `
     return col;
   }
 
-  // モノクロノイズ雲
   vec3 monoClouds(vec2 uv, float t) {
     float n = fbm(uv * 2.5 + t * 0.03);
     float n2 = fbm(uv * 4.0 - t * 0.02 + 1.7);
@@ -385,7 +459,6 @@ const fragShader = `
     return vec3(v * 0.12);
   }
 
-  // 渦・吸引エフェクト
   vec2 vortex(vec2 uv, vec2 center, float strength) {
     vec2 d = uv - center;
     float r = length(d);
@@ -396,7 +469,6 @@ const fragShader = `
     return center + vec2(cos(angle), sin(angle)) * r;
   }
 
-  // オーロラ（有機的・渦巻き）
   vec3 aurora(vec2 uv, float t, float intensity) {
     vec3 col = vec3(0.0);
     float r = length(uv);
@@ -416,14 +488,12 @@ const fragShader = `
     return col;
   }
 
-  // 色バースト（螺旋）
   vec3 colorBurst(vec2 uv, vec2 tap, float t, float burst) {
     vec3 col = vec3(0.0);
     vec2 d = uv - tap;
     float r = length(d);
     float angle = atan(d.y, d.x);
 
-    // 螺旋吸引
     float spiral = burst * 2.0;
     float twistAngle = angle + spiral / (r + 0.1) * 0.3;
 
@@ -437,26 +507,22 @@ const fragShader = `
       col += c * streak * wave * burst;
     }
 
-    // 中心光
     float center = smoothstep(0.3, 0.0, r) * burst * burst;
     col += vec3(1.0, 0.95, 0.9) * center * 2.0;
 
     return col;
   }
 
-  // ビッグバン
   vec3 bigBang(vec2 uv, vec2 tap, float t, float bang) {
     vec3 col = vec3(0.0);
     vec2 d = uv - tap;
     float r = length(d);
     float angle = atan(d.y, d.x);
 
-    // 爆発波
     float waveFront = bang * 2.5;
     float ring = smoothstep(0.04, 0.0, abs(r - waveFront * 0.5)) * bang;
     col += vec3(1.0, 0.98, 0.95) * ring * 3.0;
 
-    // 放射光線
     for(int i=0;i<16;i++){
       float fi = float(i);
       float rayAngle = fi / 16.0 * TAU + t * 0.2;
@@ -467,7 +533,6 @@ const fragShader = `
       col += c * ray * bang * 2.0;
     }
 
-    // 粒子散乱
     for(int i=0;i<20;i++){
       float fi = float(i);
       float h = hash(vec2(fi, fi*1.7));
@@ -481,11 +546,41 @@ const fragShader = `
       col += pc * particle * 2.0;
     }
 
-    // 全体フレア
     float flare = smoothstep(1.0, 0.0, r) * bang * bang * 0.3;
     col += vec3(0.8, 0.7, 1.0) * flare;
 
     return col;
+  }
+
+  vec3 tunnel(vec2 uv, float t, float intensity) {
+    vec2 center = uv - 0.5;
+    float r = length(center);
+    float angle = atan(center.y, center.x);
+    
+    float speed = 0.8 + t * 0.3;
+    float tunnelPos = mod(t * speed - r * 3.0, 1.0);
+    
+    float rings = sin(tunnelPos * PI * 6.0) * 0.5 + 0.5;
+    
+    float wallInner = 0.48;
+    float wallOuter = 0.55;
+    float wall = smoothstep(wallOuter, wallInner + 0.02, r) - smoothstep(wallInner, wallInner - 0.02, r);
+    wall *= rings * intensity;
+    
+    float darkTunnel = smoothstep(wallInner, wallInner - 0.1, r);
+    vec3 tunnelColor = mix(vec3(0.02, 0.01, 0.05), vec3(0.1, 0.05, 0.15), wall);
+    tunnelColor = mix(tunnelColor, vec3(0.0), darkTunnel * 0.8);
+    
+    float speedLine = sin(angle * 8.0 + t * 2.0) * 0.5 + 0.5;
+    tunnelColor += speedLine * wall * 0.1;
+    
+    return tunnelColor;
+  }
+
+  vec3 lightBurst(vec2 uv, float burst) {
+    float r = length(uv - 0.5);
+    float light = smoothstep(0.8, 0.0, r) * burst;
+    return vec3(1.0, 0.98, 0.95) * light * 2.5;
   }
 
   void main() {
@@ -498,49 +593,41 @@ const fragShader = `
     float burst = uBurst;
     float colorAmt = uColor;
     float bang = uBigBang;
+    float tunnel = uTunnelIntensity;
+    float lightBurstAmt = uLightBurst;
 
-    // モノクロ背景
     vec3 mono = stars(uv, t) + monoClouds(uv, t);
 
-    // 渦（タップ後に吸引）
     vec2 vortexUV = uv;
     if(burst > 0.01) {
       vortexUV = vortex(uv, uTap, burst * 0.8);
     }
     vec3 monoDistorted = stars(vortexUV, t) + monoClouds(vortexUV, t);
 
-    // カラーバースト
     vec3 color = colorBurst(uvA, tapA, t, burst);
 
-    // オーロラ
     vec2 auroraUV = (uv - 0.5) * 2.0;
     vec3 aur = aurora(auroraUV, t, burst * colorAmt);
 
-    // ビッグバン
     vec3 bb = bigBang(uvA, tapA, t, bang);
 
-    // 合成
-    vec3 base = monoDistorted;
+    vec3 tunnelColor = tunnel(uv, t, tunnel);
+    vec3 lightColor = lightBurst(uv, lightBurstAmt);
 
-    // バーストで色が入ってくる
+    vec3 base = mix(monoDistorted, tunnelColor, tunnel);
     vec3 col = mix(base, base + color + aur, colorAmt);
-
-    // ビッグバンでさらに爆発
     col += bb;
+    col += lightColor;
 
-    // 暗闇フラッシュ（収縮の頂点）
     float flash = smoothstep(0.85, 1.0, burst) * smoothstep(1.0, 0.85, burst) * 3.0;
     col = mix(col, vec3(1.0), flash * 0.7);
 
-    // 暗転（ビッグバン前の一瞬）
     float dark = smoothstep(0.0, 0.3, bang) * smoothstep(0.5, 0.2, bang);
     col = mix(col, vec3(0.0), dark * 0.8);
 
-    // トーンマッピング
     col = col / (col + 0.8);
     col = pow(col, vec3(0.85));
 
-    // ビネット
     float vig = length((uv - 0.5) * 1.6);
     col *= 1.0 - vig * vig * 0.5;
 
@@ -552,13 +639,14 @@ const geo = new THREE.PlaneGeometry(2, 2);
 const mat = new THREE.ShaderMaterial({ uniforms, vertexShader: vertShader, fragmentShader: fragShader });
 scene.add(new THREE.Mesh(geo, mat));
 
-// ===== ANIMATION TARGETS =====
 let burstTarget = 0;
 let colorTarget = 0;
 let bangTarget = 0;
+let tunnelTarget = 0;
+let lightBurstTarget = 0;
 
-// ===== UI ELEMENTS =====
 const tb1 = document.getElementById('tb1');
+const jetcoasterScene = document.getElementById('jetcoaster-scene');
 const msg2 = document.getElementById('message2');
 const msg3 = document.getElementById('message3');
 const pl2 = document.getElementById('pl2');
@@ -569,10 +657,19 @@ const ml3 = document.getElementById('ml3');
 const replay = document.getElementById('replay');
 const cursorEl = document.getElementById('cursor');
 
-// 初期表示
+pl2.textContent = todaysMiracle.poem;
+ml1.textContent = todaysMiracle.l1;
+ml2.textContent = todaysMiracle.l2;
+
+if (!isFirstVisitToday) {
+  const subTitleEl = tb1.querySelector('.sub-title');
+  const hintEl = tb1.querySelector('.hint');
+  if (subTitleEl) subTitleEl.textContent = 'today's miracle is already yours';
+  if (hintEl) hintEl.textContent = 'tap to see it again';
+}
+
 setTimeout(() => tb1.classList.add('visible'), 400);
 
-// ===== CURSOR =====
 let mouseForceTarget = 0;
 
 document.addEventListener('mousemove', e => {
@@ -592,10 +689,8 @@ document.addEventListener('touchmove', e => {
   mouseForceTarget = 1.0;
 }, { passive: true });
 
-// マウスが静止したらforceを落とす
 setInterval(() => { mouseForceTarget *= 0.85; }, 50);
 
-// ===== TAP / CLICK =====
 function getEventPos(e) {
   if(e.touches) {
     return { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -606,29 +701,38 @@ function getEventPos(e) {
 function handleTap(e) {
   if(phase === 2) return;
   if(phase === 0) {
-    // Phase 0 → 1: バースト開始
     const pos = getEventPos(e);
     tapX = pos.x / window.innerWidth;
     tapY = 1.0 - pos.y / window.innerHeight;
     uniforms.uTap.value.set(tapX, tapY);
 
-    phase = 1;
-    burstTarget = 1.0;
-    colorTarget = 1.0;
-
-    // テキスト非表示
+    phase = 0.5;
     tb1.classList.remove('visible');
     tb1.classList.add('hidden');
 
-    // 詩を表示（タイミング）
+    jetcoasterScene.classList.add('visible');
+    tunnelTarget = 1.0;
+    jetcoasterStartTime = Date.now();
+
     setTimeout(() => {
-      msg2.classList.add('visible');
-      setTimeout(() => { pl2.classList.add('visible'); }, 400);
-      setTimeout(() => { ph.classList.add('visible'); }, 1400);
-    }, 1600);
+      if(phase === 0.5) {
+        phase = 1;
+        
+        jetcoasterScene.classList.remove('visible');
+        tunnelTarget = 0;
+        
+        lightBurstTarget = 1.0;
+        
+        setTimeout(() => {
+          lightBurstTarget = 0;
+          msg2.classList.add('visible');
+          setTimeout(() => { pl2.classList.add('visible'); }, 400);
+          setTimeout(() => { ph.classList.add('visible'); }, 1400);
+        }, 800);
+      }
+    }, 15000);
 
   } else if(phase === 1) {
-    // Phase 1 → 2: ビッグバン
     const pos = getEventPos(e);
     tapX = pos.x / window.innerWidth;
     tapY = 1.0 - pos.y / window.innerHeight;
@@ -637,10 +741,8 @@ function handleTap(e) {
     phase = 2;
     bangTarget = 1.0;
 
-    // 詩を消す
     msg2.classList.remove('visible');
 
-    // ミラクルメッセージ
     setTimeout(() => {
       msg3.classList.add('visible');
       setTimeout(() => { ml1.classList.add('visible'); }, 300);
@@ -654,18 +756,20 @@ function handleTap(e) {
 document.addEventListener('click', handleTap);
 document.addEventListener('touchstart', e => { e.preventDefault(); handleTap(e); }, { passive: false });
 
-// Replay
 function doReplay(e) {
   e.stopPropagation();
   e.preventDefault();
   phase = 0;
-  burstTarget = 0; colorTarget = 0; bangTarget = 0;
+  burstTarget = 0; colorTarget = 0; bangTarget = 0; tunnelTarget = 0; lightBurstTarget = 0;
   uniforms.uBurst.value = 0;
   uniforms.uColor.value = 0;
   uniforms.uBigBang.value = 0;
+  uniforms.uTunnelIntensity.value = 0;
+  uniforms.uLightBurst.value = 0;
 
   msg3.classList.remove('visible');
   replay.classList.remove('visible');
+  jetcoasterScene.classList.remove('visible');
   [ml1,ml2,ml3].forEach(el => el.classList.remove('visible'));
   [pl2,ph].forEach(el => el.classList.remove('visible'));
 
@@ -678,7 +782,6 @@ function doReplay(e) {
 replay.addEventListener('click', doReplay);
 replay.addEventListener('touchstart', doReplay, { passive: false });
 
-// ===== RENDER LOOP =====
 const clock = new THREE.Clock();
 
 function lerp(a, b, t) { return a + (b - a) * t; }
@@ -689,16 +792,16 @@ function lerp(a, b, t) { return a + (b - a) * t; }
   const elapsed = clock.getElapsedTime();
   uniforms.uTime.value = elapsed;
 
-  // スムーズ補間
   uniforms.uBurst.value  = lerp(uniforms.uBurst.value,  burstTarget,  0.025);
   uniforms.uColor.value  = lerp(uniforms.uColor.value,  colorTarget,  0.018);
   uniforms.uBigBang.value = lerp(uniforms.uBigBang.value, bangTarget, 0.022);
   uniforms.uMouseForce.value = lerp(uniforms.uMouseForce.value, mouseForceTarget, 0.08);
+  uniforms.uTunnelIntensity.value = lerp(uniforms.uTunnelIntensity.value, tunnelTarget, 0.04);
+  uniforms.uLightBurst.value = lerp(uniforms.uLightBurst.value, lightBurstTarget, 0.08);
 
   renderer.render(scene, camera);
 })();
 
-// ===== RESIZE =====
 window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
   uniforms.uResolution.value.set(window.innerWidth, window.innerHeight);
